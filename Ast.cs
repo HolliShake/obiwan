@@ -200,6 +200,29 @@ public class Ast : IDisposable
         };
     }
 
+    public static Ast CreateForeachArrayNode(Ast iterable, Ast iterVar, Ast thenBranch,
+        Position position)
+    {
+        return new Ast(AstType.AstForeachArray, position)
+        {
+            A = iterable,
+            B = iterVar,
+            C = thenBranch
+        };
+    }
+
+    public static Ast CreateForeachObjectNode(Ast iterable, Ast iterKey, Ast iterVal, Ast thenBranch,
+        Position position)
+    {
+        return new Ast(AstType.AstForeachObject, position)
+        {
+            A = iterable,
+            B = iterKey,
+            C = iterVal,
+            D = thenBranch
+        };
+    }
+
     public static Ast CreateWhileNode(Ast condition, Ast thenBranch, Position position)
     {
         return new Ast(AstType.AstWhile, position)

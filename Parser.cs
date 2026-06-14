@@ -23,7 +23,7 @@ public class Parser(string path, string source) : Lexer(path, source)
         if (!Check(type))
             ErrorHandler.CompileError(
                 Path, Source,
-                $"Expected token of type {type}, but got {Lookahead.Value} at position {Lookahead.Position.Line}.",
+                $"expected token of type {type}, but got {Lookahead.Value} at position {Lookahead.Position.Line}.",
                 Lookahead.Position);
 
         Lookahead = Next();
@@ -35,7 +35,7 @@ public class Parser(string path, string source) : Lexer(path, source)
         if (!Check(value))
             ErrorHandler.CompileError(
                 Path, Source,
-                $"Expected token with value '{value}', but got {Lookahead.Value} at position {Lookahead.Position.Line}.",
+                $"expected token with value '{value}', but got {Lookahead.Value} at position {Lookahead.Position.Line}.",
                 Lookahead.Position);
 
         Lookahead = Next();
@@ -178,7 +178,7 @@ public class Parser(string path, string source) : Lexer(path, source)
 
         var condition = Expression();
         if (condition == null)
-            ErrorHandler.CompileError(Path, Source, "Expected switch condition expression.", Lookahead.Position);
+            ErrorHandler.CompileError(Path, Source, "expected switch condition expression.", Lookahead.Position);
 
         Expect(")");
         Expect("{");
@@ -198,13 +198,13 @@ public class Parser(string path, string source) : Lexer(path, source)
 
             var caseCondition = Expression();
             if (caseCondition == null)
-                ErrorHandler.CompileError(Path, Source, "Expected case condition expression.", Lookahead.Position);
+                ErrorHandler.CompileError(Path, Source, "expected case condition expression.", Lookahead.Position);
 
             Expect("=>");
 
             var caseValue = Expression();
             if (caseValue == null)
-                ErrorHandler.CompileError(Path, Source, "Expected case value expression.", Lookahead.Position);
+                ErrorHandler.CompileError(Path, Source, "expected case value expression.", Lookahead.Position);
 
             if (caseCondition is { Type: AstType.AstName, Value: "_" })
             {
@@ -232,7 +232,7 @@ public class Parser(string path, string source) : Lexer(path, source)
         }
 
         if (defaultCase == null)
-            ErrorHandler.CompileError(Path, Source, "Expected a default case in the switch statement.",
+            ErrorHandler.CompileError(Path, Source, "expected a default case in the switch statement.",
                 Lookahead.Position);
 
         Expect("}");
@@ -483,7 +483,7 @@ public class Parser(string path, string source) : Lexer(path, source)
             Expect(TokenType.Sym);
 
             var rhs = Unary()
-                      ?? throw new Exception($"Expected a terminal after '{opt}' at position {Lookahead.Position}.");
+                      ?? throw new Exception($"expected a terminal after '{opt}' at position {Lookahead.Position}.");
 
             lhs = Ast.CreateBinaryOperationNode(opt switch
             {
@@ -510,7 +510,7 @@ public class Parser(string path, string source) : Lexer(path, source)
             Expect(TokenType.Sym);
 
             var rhs = Multiplicative()
-                      ?? throw new Exception($"Expected a terminal after '{opt}' at position {Lookahead.Position}.");
+                      ?? throw new Exception($"expected a terminal after '{opt}' at position {Lookahead.Position}.");
 
             lhs = Ast.CreateBinaryOperationNode(opt switch
             {
@@ -536,7 +536,7 @@ public class Parser(string path, string source) : Lexer(path, source)
             Expect(TokenType.Sym);
 
             var rhs = Additive()
-                      ?? throw new Exception($"Expected a terminal after '{opt}' at position {Lookahead.Position}.");
+                      ?? throw new Exception($"expected a terminal after '{opt}' at position {Lookahead.Position}.");
 
             lhs = Ast.CreateBinaryOperationNode(opt switch
             {
@@ -562,7 +562,7 @@ public class Parser(string path, string source) : Lexer(path, source)
             Expect(TokenType.Sym);
 
             var rhs = Shift()
-                      ?? throw new Exception($"Expected a terminal after '{opt}' at position {Lookahead.Position}.");
+                      ?? throw new Exception($"expected a terminal after '{opt}' at position {Lookahead.Position}.");
 
             lhs = Ast.CreateBinaryOperationNode(opt switch
             {
@@ -590,7 +590,7 @@ public class Parser(string path, string source) : Lexer(path, source)
             Expect(TokenType.Sym);
 
             var rhs = Relational()
-                      ?? throw new Exception($"Expected a terminal after '{opt}' at position {Lookahead.Position}.");
+                      ?? throw new Exception($"expected a terminal after '{opt}' at position {Lookahead.Position}.");
 
             lhs = Ast.CreateBinaryOperationNode(opt switch
             {
@@ -618,7 +618,7 @@ public class Parser(string path, string source) : Lexer(path, source)
             Expect(TokenType.Sym);
 
             var rhs = Equality()
-                      ?? throw new Exception($"Expected a terminal after '{opt}' at position {Lookahead.Position}.");
+                      ?? throw new Exception($"expected a terminal after '{opt}' at position {Lookahead.Position}.");
 
             lhs = Ast.CreateBinaryOperationNode(opt switch
             {
@@ -645,7 +645,7 @@ public class Parser(string path, string source) : Lexer(path, source)
             Expect(TokenType.Sym);
 
             var rhs = Bitwise()
-                      ?? throw new Exception($"Expected a terminal after '{opt}' at position {Lookahead.Position}.");
+                      ?? throw new Exception($"expected a terminal after '{opt}' at position {Lookahead.Position}.");
 
             lhs = Ast.CreateBinaryOperationNode(opt switch
             {
@@ -672,7 +672,7 @@ public class Parser(string path, string source) : Lexer(path, source)
             Expect(TokenType.Sym);
 
             var rhs = Assignment() // right-recursive
-                      ?? throw new Exception($"Expected expression after '{opt}' at position {Lookahead.Position}.");
+                      ?? throw new Exception($"expected expression after '{opt}' at position {Lookahead.Position}.");
 
             var astType = opt switch
             {
@@ -953,7 +953,7 @@ public class Parser(string path, string source) : Lexer(path, source)
 
         var condition = Expression();
         if (condition == null)
-            ErrorHandler.CompileError(Path, Source, "Expected switch condition expression.", Lookahead.Position);
+            ErrorHandler.CompileError(Path, Source, "expected switch condition expression.", Lookahead.Position);
 
         Expect(")");
         Expect("{");
@@ -985,7 +985,7 @@ public class Parser(string path, string source) : Lexer(path, source)
                 caseCondition = Expression();
                 var tailCaseCondition = caseCondition!;
                 if (caseCondition == null)
-                    ErrorHandler.CompileError(Path, Source, "Expected case condition expression.", Lookahead.Position);
+                    ErrorHandler.CompileError(Path, Source, "expected case condition expression.", Lookahead.Position);
                 Expect(":");
 
                 while (Check(Keyword.Case))
@@ -993,7 +993,7 @@ public class Parser(string path, string source) : Lexer(path, source)
                     Expect(Keyword.Case);
                     var nextCaseCondition = Expression();
                     if (nextCaseCondition == null)
-                        ErrorHandler.CompileError(Path, Source, "Expected case condition expression.",
+                        ErrorHandler.CompileError(Path, Source, "expected case condition expression.",
                             Lookahead.Position);
                     Expect(":");
                     tailCaseCondition.Next = nextCaseCondition!;
@@ -1003,7 +1003,7 @@ public class Parser(string path, string source) : Lexer(path, source)
 
             var caseValue = Statement();
             if (caseValue == null)
-                ErrorHandler.CompileError(Path, Source, "Expected case statement.", Lookahead.Position);
+                ErrorHandler.CompileError(Path, Source, "expected case statement.", Lookahead.Position);
 
             if (caseCondition == null && hasDefault)
             {
@@ -1071,21 +1071,21 @@ public class Parser(string path, string source) : Lexer(path, source)
         Expect(Keyword.From);
         var start = Expression();
         if (start == null)
-            ErrorHandler.CompileError(Path, Source, "Expected expression.", Lookahead.Position);
+            ErrorHandler.CompileError(Path, Source, "expected expression.", Lookahead.Position);
         Expect(Keyword.To);
         var end = Expression();
         if (end == null)
-            ErrorHandler.CompileError(Path, Source, "Expected expression.", Lookahead.Position);
+            ErrorHandler.CompileError(Path, Source, "expected expression.", Lookahead.Position);
         Expect(Keyword.Foreach);
         var iterVar = Terminal();
         if (iterVar == null)
             ErrorHandler.CompileError(Path, Source, "expects a variable name", Lookahead.Position);
         if (iterVar is not { Type: AstType.AstName })
-            ErrorHandler.CompileError(Path, Source, "expects a variable name", Lookahead.Position);
+            ErrorHandler.CompileError(Path, Source, "expects a variable name", iterVar!.Position);
         Expect(",");
         var step = Expression();
         if (step == null)
-            ErrorHandler.CompileError(Path, Source, "Expected expression.", Lookahead.Position);
+            ErrorHandler.CompileError(Path, Source, "expected expression.", Lookahead.Position);
         Expect(Keyword.Do);
         var thenBranch = Statement();
         if (thenBranch == null) ErrorHandler.CompileError(Path, Source, "expects statement", Lookahead.Position);
@@ -1101,12 +1101,32 @@ public class Parser(string path, string source) : Lexer(path, source)
         Expect(Keyword.Foreach);
         var iterable = Expression();
         if (iterable == null)
-            ErrorHandler.CompileError(Path, Source, "Expected expression.", Lookahead.Position);
-        if (Check("{"))
+            ErrorHandler.CompileError(Path, Source, "expected expression.", Lookahead.Position);
+
+        var iterVar = Terminal();
+        if (iterVar == null)
+            ErrorHandler.CompileError(Path, Source, "expects a variable name", Lookahead.Position);
+        if (iterVar is not { Type: AstType.AstName })
+            ErrorHandler.CompileError(Path, Source, "expects a variable name", iterVar!.Position);
+
+        Ast? iterVal = null;
+        if (Check(","))
         {
+            Expect(",");
+            iterVal = Terminal();
+            if (iterVal == null)
+                ErrorHandler.CompileError(Path, Source, "expected expression.", Lookahead.Position);
+            if (iterVal is not { Type: AstType.AstName })
+                ErrorHandler.CompileError(Path, Source, "expects a variable name", iterVal!.Position);
         }
 
-        return null!;
+        Expect(Keyword.Do);
+        var statement = Statement();
+        if (statement == null) ErrorHandler.CompileError(Path, Source, "expects statement", Lookahead.Position);
+
+        return iterVal == null
+            ? Ast.CreateForeachArrayNode(iterable!, iterVar, statement!, position)
+            : Ast.CreateForeachObjectNode(iterable!, iterVar!, iterVal!, statement!, position);
     }
 
     private Ast While()

@@ -1160,7 +1160,7 @@ public class Compiler : Parser
 
         // Body
         Stmt(code, loopTable, body);
-        
+
         // 'continue' must skip the rest of the body, but STILL execute the step mutation!
         var continueTarget = code.GetCurrent();
 
@@ -1176,7 +1176,7 @@ public class Compiler : Parser
         code.EmitAbsoluteJump(OpCode.AbsJump, begin);
 
         code.Label(jumpToEndForeach);
-        
+
         // Map continues back up to the step phase
         foreach (var continueSignal in loopTable.GetContinueSignals()) code.Label(continueSignal, continueTarget);
 
