@@ -295,5 +295,10 @@ from 0 to 40 foreach i, 1 do {
 }
 
 foreach [1,2,3] i do {
+    if i == 2 continue;
     println(">>>>", i);
+}
+
+foreach {a: "A", b: "B"} k, v do {
+    println(">>>>", k, v);
 }

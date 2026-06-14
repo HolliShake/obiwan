@@ -714,6 +714,12 @@ public class Compiler : Parser
                 FromForeach(code, table, node);
                 break;
             }
+            case AstType.AstForeachArray:
+            case AstType.AstForeachObject:
+            {
+                Foreach(code, table, node, node.Type == AstType.AstForeachObject);
+                break;
+            }
             case AstType.AstWhile:
             {
                 While(code, table, node);
@@ -1185,6 +1191,59 @@ public class Compiler : Parser
 
         // Clean range
         code.EmitLine(ModuleId, step.Position.Line);
+        code.Emit(OpCode.PopTop);
+    }
+
+    private void Foreach(Code code, SymbolTable table, Ast node, bool isObject)
+    {
+        Debug.Assert(node is { A: not null, B: not null, C: not null },
+            "node.A or node.B or node.C is null");
+        var iterable = node.A;
+        var variable = node.B;
+        var varValue = node.C;
+        var body = isObject ? node.D : node.C;
+        var loopTable = new SymbolTable(ScopeType.Loop, table);
+
+        Expr(code, loopTable, iterable);
+        code.EmitLine(ModuleId, iterable.Position.Line);
+        code.Emit(OpCode.MakeIterator);
+
+        var begin = code.GetCurrent();
+        code.EmitLine(ModuleId, iterable.Position.Line);
+        code.Emit(OpCode.IteratorCursor);
+
+        if (isObject)
+        {
+            var valueAddress = code.AllocateLocal();
+            loopTable.Add(varValue.Value, valueAddress, false, true, variable.Position);
+            code.EmitLine(ModuleId, variable.Position.Line);
+            code.Emit(OpCode.StoreLocal, valueAddress);
+        }
+
+        var variableAddress = code.AllocateLocal();
+        loopTable.Add(variable.Value, variableAddress, false, true, variable.Position);
+        code.EmitLine(ModuleId, variable.Position.Line);
+        code.Emit(OpCode.StoreLocal, variableAddress);
+
+        code.EmitLine(ModuleId, node.Position.Line);
+        var jumpToEndForeach = code.EmitJump(OpCode.JumpIfNotNext);
+
+        Stmt(code, loopTable, body!);
+
+        var continueTarget = code.GetCurrent();
+        code.EmitLine(ModuleId, iterable.Position.Line);
+        code.Emit(OpCode.IteratorNext);
+
+        code.EmitLine(ModuleId, node.Position.Line);
+        code.EmitAbsoluteJump(OpCode.AbsJump, begin);
+
+        code.Label(jumpToEndForeach);
+
+        foreach (var continueSignal in loopTable.GetContinueSignals()) code.Label(continueSignal, continueTarget);
+        foreach (var breakSignal in loopTable.GetBreakSignals()) code.Label(breakSignal);
+
+        // Clean range
+        code.EmitLine(ModuleId, node.Position.Line);
         code.Emit(OpCode.PopTop);
     }
 

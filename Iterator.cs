@@ -19,6 +19,10 @@ public class Iterator
 
     public bool HasNext { get; private set; }
 
+    public ObValue[] CurrentCursor => _dictEnum != null
+        ? [ObValue.FromString(_dictEnum.Current.Key), _dictEnum.Current.Value]
+        : [_listEnum!.Current];
+
     public ObValue[] Next()
     {
         if (!HasNext)

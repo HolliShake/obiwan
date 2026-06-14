@@ -966,6 +966,50 @@ public class Vm : IDisposable
                     range.CursorSet(step.Number());
                     break;
                 }
+                case OpCode.MakeIterator:
+                {
+                    var iterable = frame.PopOperand();
+                    switch (iterable.Type)
+                    {
+                        case ValueType.Array:
+                        {
+                            frame.PushOperand(ObValue.FromIterator((List<ObValue>)iterable.Ref!));
+                            break;
+                        }
+                        case ValueType.Object:
+                        case ValueType.ObjectLiteral:
+                        case ValueType.Error:
+                        {
+                            frame.PushOperand(ObValue.FromIterator((Dictionary<string, ObValue>)iterable.Ref!));
+                            break;
+                        }
+                        default:
+                        {
+                            RaiseOrHandleException(frame,
+                                ObValue.FromErrorMessage(TypeErrorClass,
+                                    $"object of type '{iterable.GetObType()}' is not iterable",
+                                    BuildTracebackFromFrame()));
+                            break;
+                        }
+                    }
+
+                    break;
+                }
+                case OpCode.IteratorCursor:
+                {
+                    var iterator = frame.PeekOperand();
+                    var instance = iterator.Iterator();
+                    var next = instance.CurrentCursor.ToList();
+                    foreach (var obValue in next) frame.PushOperand(obValue);
+                    break;
+                }
+                case OpCode.IteratorNext:
+                {
+                    var iterator = frame.PeekOperand();
+                    var instance = iterator.Iterator();
+                    instance.Next();
+                    break;
+                }
                 case OpCode.LoadFunction:
                 {
                     var off = ReadInt(frame);
@@ -1465,7 +1509,9 @@ public class Vm : IDisposable
 
                     var top = frame.PeekOperand();
 
-                    if (!top.Range().HasNext)
+                    if (ObValue.IsInstanceOf(top, ValueType.Range) && !top.Range().HasNext)
+                        frame.JumpTo(jmp);
+                    else if (ObValue.IsInstanceOf(top, ValueType.Iterator) && !top.Iterator().HasNext)
                         frame.JumpTo(jmp);
                     else
                         top.Range().Next();
@@ -1478,7 +1524,9 @@ public class Vm : IDisposable
 
                     var top = frame.PeekOperand();
 
-                    if (!top.Range().HasNext)
+                    if (ObValue.IsInstanceOf(top, ValueType.Range) && !top.Range().HasNext)
+                        frame.JumpTo(jmp);
+                    else if (ObValue.IsInstanceOf(top, ValueType.Iterator) && !top.Iterator().HasNext)
                         frame.JumpTo(jmp);
                     break;
                 }

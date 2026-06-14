@@ -41,6 +41,16 @@ public sealed class ObValue
         return new ObValue(ValueType.Range, 0, new Range(start, end));
     }
 
+    public static ObValue FromIterator(Dictionary<string, ObValue> iterator)
+    {
+        return new ObValue(ValueType.Iterator, 0d, new Iterator(iterator));
+    }
+
+    public static ObValue FromIterator(List<ObValue> list)
+    {
+        return new ObValue(ValueType.Iterator, 0d, new Iterator(list));
+    }
+
     public static ObValue FromInt(int value)
     {
         return new ObValue(ValueType.Int, value);
@@ -81,7 +91,7 @@ public sealed class ObValue
         Debug.Assert(baseClass is null or { Type: ValueType.Class }, "Parent is not a class.");
         return new ObValue(ValueType.Class, reference: new Dictionary<string, ObValue?>
         {
-            ["base"] = baseClass,
+            [Keyword.Base] = baseClass,
             ["type"] = FromString(type)
         });
     }
@@ -136,6 +146,12 @@ public sealed class ObValue
         return (Range)Ref;
     }
 
+    public Iterator Iterator()
+    {
+        Debug.Assert(this is { Type: ValueType.Iterator, Ref: not null }, "Ref is not an iterator or is null.");
+        return (Iterator)Ref;
+    }
+
     public int Int()
     {
         return (int)Num;
@@ -180,6 +196,7 @@ public sealed class ObValue
             ValueType.Array => "array",
             ValueType.Future => "future",
             ValueType.Range => "range",
+            ValueType.Iterator => "iterator",
             ValueType.Int => "int",
             ValueType.Number => "number",
             ValueType.Bool => "bool",
@@ -195,7 +212,7 @@ public sealed class ObValue
     private static string GetInternalType(ObValue v)
     {
         return v.Ref is Dictionary<string, ObValue> props
-               && props.TryGetValue("constructor", out var ctor)
+               && props.TryGetValue(Keyword.Constructor, out var ctor)
                && ctor.Ref is Dictionary<string, ObValue?> cp
             ? cp.GetValueOrDefault("type")?.Ref as string ?? "object"
             : "object";
@@ -214,7 +231,7 @@ public sealed class ObValue
             || zsValue.Type is not (ValueType.Object or ValueType.ObjectLiteral or ValueType.Error))
             return false;
 
-        return props.TryGetValue("constructor", out var ctor)
+        return props.TryGetValue(Keyword.Constructor, out var ctor)
                && WalkClassChain(ctor, className);
     }
 
@@ -230,7 +247,7 @@ public sealed class ObValue
         {
             if (cp.GetValueOrDefault("type")?.Ref is string name && name == targetName)
                 return true;
-            current = cp.GetValueOrDefault("base");
+            current = cp.GetValueOrDefault(Keyword.Base);
         }
 
         return false;
@@ -247,14 +264,14 @@ public sealed class ObValue
         if (props.TryGetValue(propertyName, out var own))
             return own;
 
-        if (!props.TryGetValue("constructor", out var current))
+        if (!props.TryGetValue(Keyword.Constructor, out var current))
             return null;
 
         while (current is { Type: ValueType.Class, Ref: Dictionary<string, ObValue?> cp })
         {
             if (cp.TryGetValue(propertyName, out var classVal) && classVal is not null)
                 return classVal;
-            current = cp.GetValueOrDefault("base");
+            current = cp.GetValueOrDefault(Keyword.Base);
         }
 
         return null;
@@ -275,7 +292,7 @@ public sealed class ObValue
         }
 
         // 3. Walk the class/prototype chain to find where it "belongs" and update it
-        if (props.TryGetValue("constructor", out var current))
+        if (props.TryGetValue(Keyword.Constructor, out var current))
             while (current is { Type: ValueType.Class, Ref: Dictionary<string, ObValue?> cp })
             {
                 if (cp.ContainsKey(propertyName))
@@ -284,7 +301,7 @@ public sealed class ObValue
                     return value;
                 }
 
-                current = cp.GetValueOrDefault("base");
+                current = cp.GetValueOrDefault(Keyword.Base);
             }
 
         // 4. Fallback: If it doesn't exist anywhere in the chain, create it locally
@@ -313,8 +330,8 @@ public sealed class ObValue
             ValueType.Range when Ref is not null => FormatRange(),
             ValueType.Int => ((int)Num).ToString(),
             ValueType.Number => Num.ToString(CultureInfo.InvariantCulture),
-            ValueType.Bool => Num != 0d ? "true" : "false",
-            ValueType.Null => "null",
+            ValueType.Bool => Num != 0d ? Keyword.True : Keyword.False,
+            ValueType.Null => Keyword.Null,
             ValueType.String when Ref is not null => (string)Ref,
             _ => throw new InvalidSwitchValueException($"type {Type} not implemented")
         };
@@ -408,7 +425,7 @@ public sealed class ObValue
         var first = true;
         foreach (var (key, value) in dict)
         {
-            if (key == "constructor" && value is { Type: ValueType.Class })
+            if (key == Keyword.Constructor && value is { Type: ValueType.Class })
                 continue;
 
             if (!first) sb.AppendLine(",");
@@ -428,7 +445,7 @@ public sealed class ObValue
     {
         var result = new Dictionary<string, ObValue>(properties.Count + 1)
         {
-            ["constructor"] = zsClass
+            [Keyword.Constructor] = zsClass
         };
         foreach (var kv in properties) result[kv.Key] = kv.Value;
         return result;

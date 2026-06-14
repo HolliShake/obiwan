@@ -12,6 +12,7 @@ public enum ValueType
     Array,
     Future,
     Range,
+    Iterator,
     Int,
     Number,
     Bool,
