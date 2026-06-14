@@ -231,6 +231,7 @@ fn parent() {
 }
 
 fn child() {
+    println(inject("name"));
     println(">>>>>", inject("name")->add(1, 5));
 }
 

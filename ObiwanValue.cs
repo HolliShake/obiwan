@@ -107,7 +107,7 @@ public sealed class ObValue
         ObValue zsClass, Dictionary<string, ObValue> properties)
     {
         Debug.Assert(zsClass.Type == ValueType.Class, "Parent is not a class.");
-        return new ObValue(ValueType.ObjectLiteral, reference: BuildProps(zsClass, properties));
+        return new ObValue(ValueType.ObjectLiteral, reference: BuildProps(zsClass, properties, true));
     }
 
     public static ObValue FromErrorMessage(ObValue zsErrorClass, string errorMessage, string traceback)
@@ -193,6 +193,10 @@ public sealed class ObValue
             ValueType.Script => "script",
             ValueType.Function => "function",
             ValueType.NativeFunction => "native function",
+            ValueType.Class => "class",
+            ValueType.Error => GetInternalType(this),
+            ValueType.Object => GetInternalType(this),
+            ValueType.ObjectLiteral => "object",
             ValueType.Array => "array",
             ValueType.Future => "future",
             ValueType.Range => "range",
@@ -202,9 +206,6 @@ public sealed class ObValue
             ValueType.Bool => "bool",
             ValueType.String => "string",
             ValueType.Null => "null",
-            ValueType.Error or
-                ValueType.ObjectLiteral or
-                ValueType.Object when IsInstanceOf(this, "Object") => GetInternalType(this),
             _ => throw new InvalidSwitchValueException($"type {Type} not implemented")
         };
     }
@@ -317,9 +318,9 @@ public sealed class ObValue
         return Type switch
         {
             ValueType.Script when Ref is not null => "[script]",
-            ValueType.Class when Ref is not null => "[class]",
             ValueType.Function when Ref is not null => "[function]",
             ValueType.NativeFunction when Ref is not null => "[native function]",
+            ValueType.Class when Ref is not null => "[class]",
             ValueType.Error when Ref is not null => FormatError(),
             ValueType.Object when Ref is not null
                 => ConvertDictToJsonFormat(GetObType(), (Dictionary<string, ObValue>)Ref, false),
@@ -328,11 +329,12 @@ public sealed class ObValue
             ValueType.Array when Ref is not null => ConvertArrayToJsonFormat((List<ObValue>)Ref),
             ValueType.Future when Ref is not null => FormatFuture(),
             ValueType.Range when Ref is not null => FormatRange(),
+            ValueType.Iterator when Ref is not null => "[iterator]",
             ValueType.Int => ((int)Num).ToString(),
             ValueType.Number => Num.ToString(CultureInfo.InvariantCulture),
             ValueType.Bool => Num != 0d ? Keyword.True : Keyword.False,
-            ValueType.Null => Keyword.Null,
             ValueType.String when Ref is not null => (string)Ref,
+            ValueType.Null => Keyword.Null,
             _ => throw new InvalidSwitchValueException($"type {Type} not implemented")
         };
     }
@@ -371,18 +373,21 @@ public sealed class ObValue
             ValueType.Script => "[script]",
             ValueType.Function => "[function]",
             ValueType.NativeFunction => "[native function]",
+            ValueType.Class when value.Ref is Dictionary<string, ObValue?> cp
+                => $"[class {cp.GetValueOrDefault("type")?.Ref as string ?? "?"}]",
+            ValueType.Error => value.FormatError(),
             ValueType.Object when value.Ref is Dictionary<string, ObValue> op
                 => ConvertDictToJsonFormat(value.GetObType(), op, false, depth),
             ValueType.ObjectLiteral when value.Ref is Dictionary<string, ObValue> op
                 => ConvertDictToJsonFormat(value.GetObType(), op, true, depth),
             ValueType.Array when value.Ref is List<ObValue> arr
                 => ConvertArrayToJsonFormat(arr, depth),
-            ValueType.Class when value.Ref is Dictionary<string, ObValue?> cp
-                => $"[class {cp.GetValueOrDefault("type")?.Ref as string ?? "?"}]",
             ValueType.Future when value.Ref is Future => value.FormatFuture(),
             ValueType.Range when value.Ref is Range => value.FormatRange(),
-            ValueType.Int or ValueType.Number
-                => value.Num.ToString(CultureInfo.InvariantCulture),
+            ValueType.Iterator => "[iterator]", // Fixed bug: was checking if Ref is Range
+            ValueType.Int => ((int)value.Num).ToString(),
+            ValueType.Number => value.Num.ToString(CultureInfo.InvariantCulture),
+            ValueType.Bool => value.Num != 0d ? Keyword.True : Keyword.False,
             ValueType.String => $"'{value.Ref as string}'",
             ValueType.Null => "null",
             _ => throw new InvalidSwitchValueException($"type {value.Type} not implemented")
@@ -441,12 +446,10 @@ public sealed class ObValue
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static Dictionary<string, ObValue> BuildProps(
-        ObValue zsClass, Dictionary<string, ObValue> properties)
+        ObValue zsClass, Dictionary<string, ObValue> properties, bool literal = false)
     {
-        var result = new Dictionary<string, ObValue>(properties.Count + 1)
-        {
-            [Keyword.Constructor] = zsClass
-        };
+        var result = new Dictionary<string, ObValue>(properties.Count + 1);
+        if (!literal) result[Keyword.Constructor] = zsClass;
         foreach (var kv in properties) result[kv.Key] = kv.Value;
         return result;
     }

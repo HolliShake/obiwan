@@ -531,7 +531,7 @@ public class Vm : IDisposable
                 : ObValue.FromErrorMessage(IndexErrorClass, "index out of bounds", BuildTracebackFromFrame());
         }
 
-        if (ObValue.IsInstanceOf(zsObject, "Object"))
+        if (ObValue.IsInstanceOf(zsObject, "Object") || ObValue.IsInstanceOf(zsObject, ValueType.ObjectLiteral))
         {
             var attr = zsObject.String();
             var attribute = ObValue.GetProperty(zsObject, attr);
@@ -556,7 +556,7 @@ public class Vm : IDisposable
         var objc = frame.PopOperand();
 
 
-        if (ObValue.IsInstanceOf(objc, "Object"))
+        if (ObValue.IsInstanceOf(objc, "Object") || ObValue.IsInstanceOf(objc, ValueType.ObjectLiteral))
         {
             var attribute = ObValue.SetProperty(objc, attr, value);
             return attribute
@@ -588,7 +588,7 @@ public class Vm : IDisposable
             return arr[indexValue] = value;
         }
 
-        if (ObValue.IsInstanceOf(objc, "Object"))
+        if (ObValue.IsInstanceOf(objc, "Object") || ObValue.IsInstanceOf(objc, ValueType.ObjectLiteral))
         {
             var attr = objc.String();
             var attribute = ObValue.SetProperty(objc, attr, value);
@@ -681,7 +681,7 @@ public class Vm : IDisposable
 
             if (indexValue >= 0 && indexValue < arr.Count) callableProperty = arr[indexValue];
         }
-        else if (ObValue.IsInstanceOf(zsObject, "Object"))
+        else if (ObValue.IsInstanceOf(zsObject, "Object") || ObValue.IsInstanceOf(zsObject, ValueType.ObjectLiteral))
         {
             memberNameString ??= memberName.ToString();
             callableProperty = ObValue.GetProperty(zsObject, memberNameString);
