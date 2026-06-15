@@ -305,6 +305,7 @@ foreach {a: "A", b: "B"} k, v do {
 }
 
 var nmm = 0;
+
 do {
     println("nmm ->", nmm);
     nmm++;
@@ -312,7 +313,8 @@ do {
 
 class Dog (Animal) {
     var dog = "Dog";
-
+    
     fn method(name) {
+        
     }
 }
