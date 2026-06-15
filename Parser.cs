@@ -710,6 +710,7 @@ public class Parser(string path, string source) : Lexer(path, source)
 
     private Ast? Statement()
     {
+        if (Check(Keyword.Class)) return Class();
         if (Check(Keyword.Fn)) return Function();
         if (Check(Keyword.Var)) return VariableDeclaration(Keyword.Var);
         if (Check(Keyword.Local)) return VariableDeclaration(Keyword.Local);
@@ -727,6 +728,47 @@ public class Parser(string path, string source) : Lexer(path, source)
         if (Check(Keyword.Break)) return Break();
         if (Check(Keyword.Return)) return Return();
         return ExpressionStatement();
+    }
+
+    private Ast Class()
+    {
+        Debug.Assert(Lookahead != null, "Lookahead is null");
+        var position = Lookahead.Position;
+        Expect(Keyword.Class);
+        var className = Terminal();
+        if (className == null)
+            ErrorHandler.CompileError(Path, Source, "expects class name", Lookahead.Position);
+        if (className is not { Type: AstType.AstName })
+            ErrorHandler.CompileError(Path, Source, "expects class name", className!.Position);
+        Ast? baseClass = null;
+        if (Check("("))
+        {
+            Expect("(");
+            baseClass = Terminal();
+            if (baseClass == null)
+                ErrorHandler.CompileError(Path, Source, "expects base class", Lookahead.Position);
+            Expect(")");
+        }
+
+        Expect("{");
+        var bodyHead = ValidClassMember();
+        var bodyTail = bodyHead;
+        while (bodyTail != null)
+        {
+            var next = ValidClassMember();
+            bodyTail.Next = next;
+            bodyTail = next;
+        }
+
+        Expect("}");
+        return Ast.CreateClassNode(className, baseClass, bodyHead, position);
+    }
+
+    private Ast? ValidClassMember()
+    {
+        if (Check(Keyword.Var)) return VariableDeclaration(Keyword.Var);
+        if (Check(Keyword.Fn)) return Function();
+        return null;
     }
 
     private Ast Function()

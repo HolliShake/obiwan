@@ -56,6 +56,7 @@ public enum AstType
     AstAndAssign,
     AstOrAssign,
     AstXorAssign,
+    AstClass,
     AstFunction,
     AstKeyValuePair,
     AstDestructureObjectInitializer,

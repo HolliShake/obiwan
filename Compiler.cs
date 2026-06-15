@@ -924,6 +924,8 @@ public class Compiler : Parser
 
     private void Function(Code code, SymbolTable table, Ast node)
     {
+        if (!table.ScopeIs(ScopeType.Global))
+            ErrorHandler.CompileError(Path, Source, "function is allowed in global scope only", node.Position);
         Debug.Assert(node is { A: not null } && table.AlreadyExists(node.A.Value), "node.A is null");
         var fnCode = new Code(node.A.Value, node.IntArg0, node.Flag0);
         var locals = new SymbolTable(ScopeType.Function, table);
@@ -975,6 +977,9 @@ public class Compiler : Parser
     {
         if (global && !table.ScopeIs(ScopeType.Global))
             ErrorHandler.CompileError(Path, Source, "variable must be in global scope", node.Position);
+        if (!global && !constant && !table.ScopeIs(ScopeType.Block) && !table.ScopeIs(ScopeType.Function) &&
+            !table.ScopeIs(ScopeType.TryBlock) && !table.ScopeIs(ScopeType.CatchBlock))
+            ErrorHandler.CompileError(Path, Source, "variable must be in block scope", node.Position);
         Debug.Assert(node is { A: not null }, "node.A is null");
 
         var storeOpCode = global ? OpCode.StoreName : OpCode.StoreLocal;
@@ -1286,7 +1291,7 @@ public class Compiler : Parser
         code.Emit(OpCode.LoopStart);
 
         Stmt(code, loopTable, node.B);
-        
+
         Expr(code, loopTable, node.A);
         code.EmitLine(ModuleId, node.Position.Line);
         var jumpToEndWhile = code.EmitJump(OpCode.PopJumpIfFalse);

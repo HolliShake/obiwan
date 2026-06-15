@@ -138,6 +138,16 @@ public class Ast : IDisposable
         };
     }
 
+    public static Ast CreateClassNode(Ast name, Ast? baseClass, Ast? methodHead, Position position)
+    {
+        return new Ast(AstType.AstClass, position)
+        {
+            A = name,
+            B = baseClass,
+            C = methodHead
+        };
+    }
+
     public static Ast CreateFunctionNode(Ast name, Ast? parameterHead, Ast? bodyHead, int argCount, bool asynchronous,
         Position position)
     {
