@@ -105,15 +105,6 @@ public class Lexer(string path, string source)
         }
     }
 
-    private Rune PeekRune(int offset = 0)
-    {
-        var idx = _indx;
-        for (var i = 0; i < offset && idx < Source.Length; i++)
-            idx += Rune.GetRuneAt(Source, idx).Utf16SequenceLength;
-
-        return idx < Source.Length ? Rune.GetRuneAt(Source, idx) : default;
-    }
-
     private void SkipLineComment()
     {
         // Consume the leading '//'

@@ -725,6 +725,11 @@ public class Compiler : Parser
                 While(code, table, node);
                 break;
             }
+            case AstType.AstDoWhile:
+            {
+                DoWhile(code, table, node);
+                break;
+            }
             case AstType.AstIf:
             {
                 If(code, table, node);
@@ -1261,6 +1266,30 @@ public class Compiler : Parser
         var jumpToEndWhile = code.EmitJump(OpCode.PopJumpIfFalse);
 
         Stmt(code, loopTable, node.B);
+
+        code.EmitLine(ModuleId, node.Position.Line);
+        code.EmitAbsoluteJump(OpCode.AbsJump, begin);
+
+        code.Label(jumpToEndWhile);
+
+        foreach (var continueSignal in loopTable.GetContinueSignals()) code.Label(continueSignal, begin);
+        foreach (var breakSignal in loopTable.GetBreakSignals()) code.Label(breakSignal);
+    }
+
+    private void DoWhile(Code code, SymbolTable table, Ast node)
+    {
+        Debug.Assert(node is { A: not null, B: not null }, "node.A or node.B is null");
+        var loopTable = new SymbolTable(ScopeType.Loop, table);
+        var begin = code.GetCurrent();
+
+        code.EmitLine(ModuleId, node.Position.Line);
+        code.Emit(OpCode.LoopStart);
+
+        Stmt(code, loopTable, node.B);
+        
+        Expr(code, loopTable, node.A);
+        code.EmitLine(ModuleId, node.Position.Line);
+        var jumpToEndWhile = code.EmitJump(OpCode.PopJumpIfFalse);
 
         code.EmitLine(ModuleId, node.Position.Line);
         code.EmitAbsoluteJump(OpCode.AbsJump, begin);

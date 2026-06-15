@@ -718,6 +718,7 @@ public class Parser(string path, string source) : Lexer(path, source)
         if (Check(Keyword.From)) return FromForeach();
         if (Check(Keyword.Foreach)) return Foreach();
         if (Check(Keyword.While)) return While();
+        if (Check(Keyword.Do)) return DoWhile();
         if (Check(Keyword.If)) return If();
         if (Check(Keyword.Switch)) return Switch();
         if (Check("{")) return Block();
@@ -1142,6 +1143,19 @@ public class Parser(string path, string source) : Lexer(path, source)
         return Ast.CreateWhileNode(
             condition!, thenBranch!, position
         );
+    }
+
+    private Ast DoWhile()
+    {
+        Debug.Assert(Lookahead != null, "Lookahead is null");
+        var position = Lookahead.Position;
+        Expect(Keyword.Do);
+        var thenBranch = Statement();
+        if (thenBranch == null) ErrorHandler.CompileError(Path, Source, "expects statement", Lookahead.Position);
+        Expect(Keyword.While);
+        var cond = Expression();
+        if (cond == null) ErrorHandler.CompileError(Path, Source, "expects condition", Lookahead.Position);
+        return Ast.CreateDoWhile(cond!, thenBranch!, position);
     }
 
     private Ast If()

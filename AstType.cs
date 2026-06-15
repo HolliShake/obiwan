@@ -69,6 +69,7 @@ public enum AstType
     AstForeachArray,
     AstForeachObject,
     AstWhile,
+    AstDoWhile,
     AstIf,
     AstSwitch,
     AstCase,

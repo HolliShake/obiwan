@@ -303,3 +303,9 @@ foreach [1,2,3] i do {
 foreach {a: "A", b: "B"} k, v do {
     println(">>>>", k, v);
 }
+
+var nmm = 0;
+do {
+    println("nmm ->", nmm);
+    nmm++;
+} while nmm < 10

@@ -232,6 +232,15 @@ public class Ast : IDisposable
         };
     }
 
+    public static Ast CreateDoWhile(Ast condition, Ast thenBranch, Position position)
+    {
+        return new Ast(AstType.AstDoWhile, position)
+        {
+            A = condition,
+            B = thenBranch
+        };
+    }
+
     public static Ast CreateIfNode(Ast condition, Ast thenBranch, Ast? elseBranch, Position position)
     {
         return new Ast(AstType.AstIf, position)
