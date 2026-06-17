@@ -322,5 +322,13 @@ class Dog (Animal) {
     }
 }
 
+println("Dog::x", (new Dog())->method());
 
-println("Dog::x", Dog->method());
+var conditionalValue = 
+    if (true) 
+        5 
+    else if (true || num == 2) 
+        2
+    else 
+        0
+    ;

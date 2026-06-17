@@ -969,7 +969,7 @@ public class Compiler : Parser
         {
             Expr(code, table, baseClass!);
         }
-        
+
         code.EmitLine(ModuleId, node.Position.Line);
         code.Emit(OpCode.LoadString, name.Value);
 

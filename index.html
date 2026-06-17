@@ -917,6 +917,36 @@ items<span class="op">-></span><span class="fn_">each</span>(<span class="kw">fn
 <span class="kw">while</span> (i <span class="op">&lt;</span> <span class="num">10</span>) { i<span class="op">++</span>; }</pre>
             </div>
 
+            <div class="card">
+                <div class="card-title">if as an Expression</div>
+                <div class="prose">Like <code>switch</code>, an <code>if</code> / <code>else if</code> /
+                    <code>else</code> chain can be used as an expression that evaluates to a value. This form
+                    requires every branch to be a single expression (no braces), and a trailing
+                    <code>else</code> is required since the expression must always produce a value. The whole
+                    chain is typically terminated with a semicolon after the final branch.
+                </div>
+                <pre><span class="com">// if-expression assigned directly to a variable</span>
+<span class="kw">var</span> conditionalValue =
+    <span class="kw">if</span> (<span class="bool_">true</span>)
+        <span class="num">5</span>
+    <span class="kw">else</span> <span class="kw">if</span> (<span class="bool_">true</span> <span
+                            class="op">||</span> num <span class="op">==</span> <span class="num">2</span>)
+        <span class="num">2</span>
+    <span class="kw">else</span>
+        <span class="num">0</span>
+    ;
+
+<span class="mac">println</span>(conditionalValue);   <span class="com">// 5</span>
+
+<span class="com">// Equivalent to a chain of branches, but as a single expression —</span>
+<span class="com">// compare with the statement form, which has no return value:</span>
+<span class="kw">if</span> (<span class="bool_">true</span>) {
+    conditionalValue = <span class="num">5</span>;
+} <span class="kw">else</span> {
+    conditionalValue = <span class="num">0</span>;
+}</pre>
+            </div>
+
         </div>
     </section>
 
@@ -1998,6 +2028,11 @@ xx = <span class="num">21</span>;
         <span class="kw">return</span> <span class="str_">"("</span> + x + <span class="str_">", "</span> + y + <span
                             class="str_">")"</span>;
     }
+}
+
+<span class="com">// A class body may also be empty</span>
+<span class="kw">class</span> <span class="ty">Empty</span> {
+
 }</pre>
             </div>
 
@@ -2029,6 +2064,31 @@ xx = <span class="num">21</span>;
             </div>
 
             <div class="card">
+                <div class="card-title">Instantiation with new &amp; this</div>
+                <div class="prose">Use <code>new ClassName(...)</code> to create an instance. Inside a method,
+                    the <code>this</code> keyword refers to the current instance, so a field declared with
+                    <code>var x = 2;</code> in the class body is reachable as <code>this</code> from any method.
+                    The result of <code>new</code> can be used directly, including chaining a <code>-></code>
+                    call onto it without storing it in a variable first.
+                </div>
+                <pre><span class="kw">class</span> <span class="ty">Dog</span> (<span class="ty">Animal</span>) {
+    <span class="kw">var</span> x = <span class="num">2</span>;
+
+    <span class="kw">fn</span> <span class="fn_">method</span>() {
+        <span class="mac">println</span>(<span class="kw">this</span>);   <span class="com">// the Dog instance</span>
+    }
+}
+
+<span class="com">// Instantiate with new, then call a method via -></span>
+<span class="kw">var</span> d = <span class="kw">new</span> <span class="ty">Dog</span>();
+d<span class="op">-></span><span class="fn_">method</span>();
+
+<span class="com">// new can also be used inline, chained directly with -></span>
+<span class="mac">println</span>(<span class="str_">"Dog::x"</span>, (<span class="kw">new</span> <span
+                            class="ty">Dog</span>())<span class="op">-></span><span class="fn_">method</span>());</pre>
+            </div>
+
+            <div class="card">
                 <div class="card-title">Class Syntax Reference</div>
                 <div class="table-wrap">
                     <table>
@@ -2055,6 +2115,14 @@ xx = <span class="num">21</span>;
                         <tr>
                             <td>Async method</td>
                             <td><code>fn method(params) async { }</code></td>
+                        </tr>
+                        <tr>
+                            <td>Instantiate</td>
+                            <td><code>new ClassName(args)</code></td>
+                        </tr>
+                        <tr>
+                            <td>Current instance</td>
+                            <td><code>this</code> (used inside methods)</td>
                         </tr>
                     </table>
                 </div>
