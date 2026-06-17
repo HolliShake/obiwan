@@ -18,6 +18,7 @@ public enum OpCode : byte
     MakeIterator,
     IteratorCursor,
     IteratorNext,
+    MakeClass,
     LoadFunction,
     StoreLocal,
     StoreName,

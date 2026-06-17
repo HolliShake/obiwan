@@ -259,7 +259,7 @@ public sealed class ObValue
     public static ObValue? GetProperty(ObValue zsValue, string propertyName)
     {
         if (zsValue.Ref is not Dictionary<string, ObValue> props
-            || zsValue is not { Type: ValueType.Object or ValueType.ObjectLiteral or ValueType.Error })
+            || zsValue is not { Type: ValueType.Class or ValueType.Object or ValueType.ObjectLiteral or ValueType.Error })
             return null;
 
         if (props.TryGetValue(propertyName, out var own))
@@ -282,7 +282,7 @@ public sealed class ObValue
     {
         // 1. Validation check
         if (zsValue.Ref is not Dictionary<string, ObValue> props
-            || zsValue is not { Type: ValueType.Object or ValueType.ObjectLiteral or ValueType.Error })
+            || zsValue is not { Type: ValueType.Class or ValueType.Object or ValueType.ObjectLiteral or ValueType.Error })
             return null;
 
         // 2. If it already belongs to the instance itself, update it there

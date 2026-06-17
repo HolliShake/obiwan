@@ -311,10 +311,16 @@ do {
     nmm++;
 } while nmm < 10
 
+class Animal {
+
+}
+
 class Dog (Animal) {
-    var dog = "Dog";
-    
-    fn method(name) {
-        
+    var x = 2;
+    fn method() {
+        println(this);
     }
 }
+
+
+println("Dog::x", Dog->method());

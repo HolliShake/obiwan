@@ -684,24 +684,29 @@ public class Compiler : Parser
     {
         switch (node.Type)
         {
+            case AstType.AstClass:
+            {
+                Class(code, table, node);
+                break;
+            }
             case AstType.AstFunction:
             {
-                Function(code, table, node);
+                Function(code, table, node, false);
                 break;
             }
             case AstType.AstGlobalVar:
             {
-                CompileVariable(true, false, code, table, node);
+                CompileVariable(true, false, code, table, node, false);
                 break;
             }
             case AstType.AstLocalVar:
             {
-                CompileVariable(false, false, code, table, node);
+                CompileVariable(false, false, code, table, node, false);
                 break;
             }
             case AstType.AstConstVar:
             {
-                CompileVariable(false, true, code, table, node);
+                CompileVariable(false, true, code, table, node, false);
                 break;
             }
             case AstType.AstTryCatch:
@@ -922,15 +927,75 @@ public class Compiler : Parser
         code.Emit(OpCode.Return);
     }
 
-    private void Function(Code code, SymbolTable table, Ast node)
+    private void Class(Code code, SymbolTable table, Ast node)
     {
         if (!table.ScopeIs(ScopeType.Global))
+            ErrorHandler.CompileError(Path, Source, "class is allowed in global scope only", node.Position);
+        Debug.Assert(node is { A: not null }, "node.A is null");
+        var name = node.A;
+        var baseClass = node.B;
+        var body = node.C;
+        var classTableStatic = new SymbolTable(ScopeType.Block, table);
+        var classTable = new SymbolTable(ScopeType.Block, table);
+
+        var count = 0;
+        while (body != null)
+        {
+            switch (body.Type)
+            {
+                case AstType.AstGlobalVar:
+                {
+                    count += CompileVariable(false, false, code, classTableStatic, body, true);
+                    break;
+                }
+                case AstType.AstFunction:
+                {
+                    Function(code, classTable, body, true);
+                    ++count;
+                    break;
+                }
+                default: throw new InvalidSwitchValueException("invalid class member");
+            }
+
+            body = body.Next;
+        }
+
+        if (baseClass == null)
+        {
+            code.EmitLine(ModuleId, node.Position.Line);
+            code.Emit(OpCode.LoadNull);
+        }
+        else
+        {
+            Expr(code, table, baseClass!);
+        }
+        
+        code.EmitLine(ModuleId, node.Position.Line);
+        code.Emit(OpCode.LoadString, name.Value);
+
+        code.EmitLine(ModuleId, node.Position.Line);
+        code.Emit(OpCode.MakeClass, count);
+
+        // Register class
+        var addressOfClass = code.AllocateLocal();
+        code.EmitLine(ModuleId, name.Position.Line);
+        code.Emit(OpCode.StoreLocal, addressOfClass);
+
+        if (table.AlreadyExists(name!.Value))
+            ErrorHandler.CompileError(Path, Source, "variable already exists",
+                name.Position);
+        table.Add(name.Value, addressOfClass, false, false, name.Position);
+    }
+
+    private void Function(Code code, SymbolTable table, Ast node, bool classMember)
+    {
+        if (!table.ScopeIs(ScopeType.Global) && !classMember)
             ErrorHandler.CompileError(Path, Source, "function is allowed in global scope only", node.Position);
-        Debug.Assert(node is { A: not null } && table.AlreadyExists(node.A.Value), "node.A is null");
+        Debug.Assert(node is { A: not null } && (classMember || table.AlreadyExists(node.A.Value)), "node.A is null");
         var fnCode = new Code(node.A.Value, node.IntArg0, node.Flag0);
         var locals = new SymbolTable(ScopeType.Function, table);
 
-        var forwarded = table.Find(node.A.Value);
+        var forwarded = classMember ? null : table.Find(node.A.Value);
 
         var position = node.Position;
 
@@ -969,11 +1034,16 @@ public class Compiler : Parser
         var addressOfCode = State.SaveCodeTemplate(fnCode);
         code.EmitLine(ModuleId, node.Position.Line);
         code.Emit(OpCode.LoadFunction, addressOfCode);
-        code.EmitLine(ModuleId, node.Position.Line);
-        code.Emit(OpCode.StoreName, forwarded.Symbol.Offset);
+
+        code.EmitLine(ModuleId, node.A.Position.Line);
+        if (classMember || forwarded == null)
+            // emit name as str
+            code.Emit(OpCode.LoadString, node.A.Value);
+        else
+            code.Emit(OpCode.StoreName, forwarded.Symbol.Offset);
     }
 
-    private void CompileVariable(bool global, bool constant, Code code, SymbolTable table, Ast node)
+    private int CompileVariable(bool global, bool constant, Code code, SymbolTable table, Ast node, bool classMember)
     {
         if (global && !table.ScopeIs(ScopeType.Global))
             ErrorHandler.CompileError(Path, Source, "variable must be in global scope", node.Position);
@@ -985,6 +1055,8 @@ public class Compiler : Parser
         var storeOpCode = global ? OpCode.StoreName : OpCode.StoreLocal;
 
         var variableInitializer = node.A;
+
+        var count = 0;
         while (variableInitializer != null)
         {
             var nameNode = variableInitializer.A;
@@ -1004,9 +1076,13 @@ public class Compiler : Parser
                         Expr(code, table, valueNode);
                     }
 
-                    var nameAddress = code.AllocateLocal();
+                    var nameAddress = classMember ? 0 : code.AllocateLocal();
                     code.EmitLine(ModuleId, variableInitializer.Position.Line);
-                    code.Emit(storeOpCode, nameAddress);
+
+                    if (classMember)
+                        code.Emit(OpCode.LoadString, nameNode!.Value);
+                    else
+                        code.Emit(storeOpCode, nameAddress);
 
                     // Register
                     if (table.AlreadyExists(nameNode!.Value))
@@ -1015,10 +1091,14 @@ public class Compiler : Parser
 
                     table.Add(nameNode.Value, nameAddress, constant, table.IsInside(ScopeType.Loop),
                         variableInitializer.Position);
+
+                    ++count;
                     break;
                 }
                 case AstType.AstDestructureArrayInitializer:
                 {
+                    if (classMember)
+                        ErrorHandler.CompileError(Path, Source, "invalid destructure inside class", node.Position);
                     var size = 0;
                     var head = nameNode;
 
@@ -1051,14 +1131,18 @@ public class Compiler : Parser
                         code.Emit(storeOpCode, address);
                     }
 
+                    count += size;
                     break;
                 }
                 case AstType.AstDestructureObjectInitializer:
                 {
+                    if (classMember)
+                        ErrorHandler.CompileError(Path, Source, "invalid destructure inside class", node.Position);
                     var keyValuePairHead = nameNode;
 
                     Expr(code, table, valueNode!);
 
+                    var size = 0;
                     while (keyValuePairHead != null)
                     {
                         // Duplicate value
@@ -1081,12 +1165,14 @@ public class Compiler : Parser
                         code.Emit(storeOpCode, address);
 
                         keyValuePairHead = keyValuePairHead.Next;
+                        ++size;
                     }
 
                     // Pop duplicated value
                     code.EmitLine(ModuleId, variableInitializer.Position.Line);
                     code.Emit(OpCode.PopTop);
 
+                    count += size;
                     break;
                 }
                 default: throw new InvalidSwitchValueException("invalid value for initializer type");
@@ -1094,6 +1180,8 @@ public class Compiler : Parser
 
             variableInitializer = variableInitializer.Next;
         }
+
+        return count;
     }
 
     private void TryCatch(Code code, SymbolTable table, Ast node)

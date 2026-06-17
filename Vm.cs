@@ -681,7 +681,7 @@ public class Vm : IDisposable
 
             if (indexValue >= 0 && indexValue < arr.Count) callableProperty = arr[indexValue];
         }
-        else if (ObValue.IsInstanceOf(zsObject, "Object") || ObValue.IsInstanceOf(zsObject, ValueType.ObjectLiteral))
+        else if (ObValue.IsInstanceOf(zsObject, "Object") || ObValue.IsInstanceOf(zsObject, ValueType.ObjectLiteral) || ObValue.IsInstanceOf(zsObject, ValueType.Class))
         {
             memberNameString ??= memberName.ToString();
             callableProperty = ObValue.GetProperty(zsObject, memberNameString);
@@ -1008,6 +1008,28 @@ public class Vm : IDisposable
                     var iterator = frame.PeekOperand();
                     var instance = iterator.Iterator();
                     instance.Next();
+                    break;
+                }
+                case OpCode.MakeClass:
+                {
+                    var size = ReadInt(frame);
+                    frame.Forward(4);
+                    var className = frame.PopOperand();
+                    var baseClass = frame.PopOperand();
+                    if (baseClass != NullSingleton && !ObValue.IsInstanceOf(baseClass, ValueType.Class))
+                    {
+                        RaiseOrHandleException(frame, ObValue.FromErrorMessage(TypeErrorClass, "extending class from invalid type", BuildTracebackFromFrame()));
+                        break;
+                    }
+                    var cls = ObValue.CreateObClass(baseClass == NullSingleton ? null : baseClass, className.String());
+                    var dict = (Dictionary<string, ObValue>) cls.Ref!;
+                    for (var i = 0; i < size; i++)
+                    {
+                        var keyOb = frame.PopOperand();
+                        var valOb = frame.PopOperand();
+                        dict[keyOb.String()] = valOb;
+                    }
+                    frame.PushOperand(cls);
                     break;
                 }
                 case OpCode.LoadFunction:

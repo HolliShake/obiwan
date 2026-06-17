@@ -744,7 +744,7 @@ public class Parser(string path, string source) : Lexer(path, source)
         if (Check("("))
         {
             Expect("(");
-            baseClass = Terminal();
+            baseClass = Expression();
             if (baseClass == null)
                 ErrorHandler.CompileError(Path, Source, "expects base class", Lookahead.Position);
             Expect(")");
@@ -892,13 +892,16 @@ public class Parser(string path, string source) : Lexer(path, source)
             if (key is not { Type: AstType.AstName })
                 ErrorHandler.CompileError(Path, Source, "expects property name", objectPosition);
 
-            Expect(":");
-
-            var alias = Terminal();
-            if (alias == null)
-                ErrorHandler.CompileError(Path, Source, "expects alias name", objectPosition);
-            if (alias is not { Type: AstType.AstName })
-                ErrorHandler.CompileError(Path, Source, "expects alias name", objectPosition);
+            var alias = key;
+            if (Check(":"))
+            {
+                Expect(":");
+                alias = Terminal();
+                if (alias == null)
+                    ErrorHandler.CompileError(Path, Source, "expects alias name", objectPosition);
+                if (alias is not { Type: AstType.AstName })
+                    ErrorHandler.CompileError(Path, Source, "expects alias name", objectPosition);
+            }
 
             var keyValuePairHead = Ast.CreateKeyValuePairNode(key!, alias!, objectPosition);
             var keyValuePairTail = keyValuePairHead;
